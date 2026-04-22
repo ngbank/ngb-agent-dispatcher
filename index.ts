@@ -1,10 +1,8 @@
-'use strict';
+import 'dotenv/config';
+import './instrumentation';
 
-require('dotenv').config();
-require('./instrumentation');
-
-const express = require('express');
-const { logs, SeverityNumber } = require('@opentelemetry/api-logs');
+import express, { Request, Response } from 'express';
+import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 
 const app = express();
 const logger = logs.getLogger('ngb-agent-dispatcher');
@@ -17,16 +15,19 @@ if (!PORT) {
 
 app.use(express.json());
 
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.post('/webhooks/jira', (req, res) => {
+app.post('/webhooks/jira', (req: Request, res: Response) => {
   logger.emit({
     severityNumber: SeverityNumber.INFO,
     severityText: 'INFO',
     body: 'Received Jira webhook',
-    attributes: { 'webhook.body': JSON.stringify(req.body) },
+    attributes: {
+      'webhook.body': JSON.stringify(req.body),
+      'http.request.headers': JSON.stringify(req.headers),
+    },
   });
 
   res.status(202).json({ received: true });
